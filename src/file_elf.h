@@ -19,6 +19,9 @@
 #ifndef _ELF_ANALYSE_H
 #define _ELF_ANALYSE_H
 
+#include <stdio.h>
+#include <stdlib.h>
+
 #include <elf.h>
 
 #include "filemap.h"
@@ -27,21 +30,25 @@
 #define ELF_MAX_SIZE 	1024*1024*1024
 
 typedef struct ELF_FILE32 {
+    //
+    FILE *fp;
+    char *filename;
 	struct filemap_t *fmap;
 } ELF_FILE;
 
 // init elf object
-//ELF_FILE* ElfInit (FILE *fp);
+ELF_FILE* ElfLoad (char *filename);
+void ElfUnload (ELF_FILE **elf);
 // check file type
 int ElfCheck (FILE *fp);
 // check if we parse architecture
-int ElfCheckArchitecture (FILE *fp);
+int ElfCheckArchitecture (ELF_FILE *elffile);
 // get elf header
-Elf32_Ehdr* ElfGetHeader (FILE *fp);
+Elf32_Ehdr* ElfGetHeader (ELF_FILE *elffile);
 // get sections table
-Elf32_Shdr* ElfGetSectionHeadersTable (FILE *fp);
+Elf32_Shdr* ElfGetSectionHeadersTable (ELF_FILE *elffile);
 // get section table with all names
-char** ElfGetSectionNamesTable (FILE *fp);
+char** ElfGetSectionNamesTable (ELF_FILE *elffile);
 
 void elf_header_get_symbols (char *binaryName);
 

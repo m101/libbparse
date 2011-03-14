@@ -24,6 +24,39 @@
 #include "file_elf.h"
 #include "filemap.h"
 
+//
+ELF_FILE* ElfLoad (char *filename) {
+    FILE *fp;
+    ELF_FILE *elf;
+
+    fp = fopen(filename, "r");
+    if (!fp)
+        return NULL;
+    elf = calloc(1, sizeof(*elf));
+    if (!elf) {
+        fclose(fp);
+        return NULL;
+    }
+    elf->filename = strdup(filename);
+    elf->fp = fp;
+    elf->fmap = filemap_create(elf->fp);
+
+    return elf;
+}
+
+//
+void ElfUnload (ELF_FILE **elf) {
+    if (!elf)
+        return;
+    if (!*elf)
+        return;
+    free((*elf)->filename);
+    filemap_destroy(&((*elf)->fmap));
+    fclose((*elf)->fp);
+    free(*elf);
+    *elf = NULL;
+}
+
 // check file type
 int ElfCheck (FILE *fp) {
 	unsigned int magic = 0;
@@ -42,11 +75,14 @@ int ElfCheck (FILE *fp) {
 }
 
 // check if we parse architecture
-int ElfCheckArchitecture (FILE *fp) {
+int ElfCheckArchitecture (ELF_FILE *elffile) {
 	Elf32_Ehdr* elfHeader;
 
+    if (!elffile)
+        return -1;
+
 	// get elf header
-	elfHeader = ElfGetHeader (fp);
+	elfHeader = ElfGetHeader (elffile->fp);
 	if (!elfHeader)
 		return -1;
 
@@ -57,15 +93,14 @@ int ElfCheckArchitecture (FILE *fp) {
 }
 
 // get elf header
-Elf32_Ehdr* ElfGetHeader (FILE *fp) {
+Elf32_Ehdr* ElfGetHeader (ELF_FILE *elffile) {
 	struct filemap_t *fmap;
 
-	// check file pointer
-	if (!fp)
-		return NULL;
+    if (!elffile)
+        return -1;
 
 	// create filemap
-	fmap = filemap_create (fp);
+	fmap = filemap_create (elffile->fp);
 	if (!fmap)
 		return NULL;
 
@@ -73,22 +108,21 @@ Elf32_Ehdr* ElfGetHeader (FILE *fp) {
 }
 
 // get program headers table
-Elf32_Phdr* ElfGetProgramHeadersTable (FILE *fp) {
+Elf32_Phdr* ElfGetProgramHeadersTable (ELF_FILE *elffile) {
 	struct filemap_t *fmap;	
 	Elf32_Ehdr *elfHeader;
 	Elf32_Phdr *programHeadersTable;
 
-	// check file pointer
-	if (!fp)
-		return NULL;
+    if (!elffile)
+        return NULL;
 
 	// create filemap
-	fmap = filemap_create (fp);
+	fmap = filemap_create (elffile->fp);
 	if (!fmap)
 		return NULL;
 
 	// get elf header
-	elfHeader = ElfGetHeader(fp);
+	elfHeader = ElfGetHeader(elffile->fp);
 	if (!elfHeader)
 		return NULL;
 
@@ -102,22 +136,23 @@ Elf32_Phdr* ElfGetProgramHeadersTable (FILE *fp) {
 }
 
 // get sections table
-Elf32_Shdr* ElfGetSectionHeadersTable (FILE *fp) {
+Elf32_Shdr* ElfGetSectionHeadersTable (ELF_FILE *elffile) {
 	struct filemap_t *fmap;
 	Elf32_Ehdr *elfHeader;
 	Elf32_Shdr *sectionsTable;
 
-	// check file pointer
-	if (!fp)
-		return NULL;
+    if (!elffile)
+        return NULL;
+    if (!elffile->fp)
+        return NULL;
 
 	// create filemap
-	fmap = filemap_create (fp);
+	fmap = filemap_create (elffile->fp);
 	if (!fmap)
 		return NULL;
 	
 	// get elf header
-	elfHeader = ElfGetHeader(fp);
+	elfHeader = ElfGetHeader(elffile->fp);
 	if (!elfHeader)
 		return NULL;
 	
@@ -131,24 +166,23 @@ Elf32_Shdr* ElfGetSectionHeadersTable (FILE *fp) {
 }
 
 // get section table with all names
-char** ElfGetSectionNamesTable (FILE *fp) {
+char** ElfGetSectionNamesTable (ELF_FILE *elffile) {
 	struct filemap_t *fmap;
 	Elf32_Ehdr *elfHeader;
 	Elf32_Shdr *sectionNamesTableHeader;
 	char *name, **sectionNamesTable;
 	size_t idxName, offsetName, offsetSectionNamesHeader;
 
-	// check file pointer
-	if (!fp)
-		return NULL;
+    if (!elffile)
+        return NULL;
 
 	// create filemap
-	fmap = filemap_create (fp);
+	fmap = filemap_create (elffile->fp);
 	if (!fmap)
 		return NULL;
 	
 	// get elf header
-	elfHeader = ElfGetHeader(fp);
+	elfHeader = ElfGetHeader(elffile->fp);
 	if (!elfHeader)
 		return NULL;
 
@@ -156,15 +190,15 @@ char** ElfGetSectionNamesTable (FILE *fp) {
 	if (elfHeader->e_shstrndx == SHN_UNDEF)
 		return NULL;
 	// else we have one
-	Elf32_Shdr* sectionNamesTableHeader2 = ElfGetSectionHeadersTable (fp);
+	Elf32_Shdr* sectionNamesTableHeader2 = ElfGetSectionHeadersTable (elffile->fp);
 	sectionNamesTableHeader2 += (elfHeader->e_shstrndx * elfHeader->e_shentsize);
-	sectionNamesTableHeader = &(ElfGetSectionHeadersTable (fp)[elfHeader->e_shstrndx]);	
+	sectionNamesTableHeader = &(ElfGetSectionHeadersTable (elffile->fp)[elfHeader->e_shstrndx]);	
 
 	offsetSectionNamesHeader = elfHeader->e_shstrndx * elfHeader->e_shentsize;
 	/*
-	printf("section names table header entry (bad) : 0x%x + 0x%x = 0x%x\n", ElfGetSectionHeadersTable (fp), offsetSectionNamesHeader,
-	       													   ElfGetSectionHeadersTable (fp) + offsetSectionNamesHeader);
-	printf("section names table header entry (good): 0x%x + 0x%x = 0x%x\n", ElfGetSectionHeadersTable (fp), offsetSectionNamesHeader, sectionNamesTableHeader);
+	printf("section names table header entry (bad) : 0x%x + 0x%x = 0x%x\n", ElfGetSectionHeadersTable (elffile->fp), offsetSectionNamesHeader,
+	       													   ElfGetSectionHeadersTable (elffile->fp) + offsetSectionNamesHeader);
+	printf("section names table header entry (good): 0x%x + 0x%x = 0x%x\n", ElfGetSectionHeadersTable (elffile->fp), offsetSectionNamesHeader, sectionNamesTableHeader);
 	*/
 
 	sectionNamesTable = calloc(elfHeader->e_shnum, sizeof(*sectionNamesTable));
