@@ -1,0 +1,21 @@
+   TO DO :
+ * Elf Format :
+ - Program header analyser
+ - Section header (~)
+ - Symbols
+ - Packing and unpacking
+ - Import reconstructor
+ - Dumper
+
+ + Sections
+ - offsets : sections names, symbols names,
+
+ * PE Format :
+ - Program header
+ - Section header
+ - Symbols
+ - Packing and unpacking
+ - Import reconstructor
+ - Dumper
+
+ - More tests on 32bits and 64bits archs

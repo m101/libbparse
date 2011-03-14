@@ -1,0 +1,29 @@
+== Binary Parser v0.1 alpha
+
+This project is aimed to have a clean library for parsing binary files and more
+specifically, executable files.
+
+For now, this project contain :
+- PE parser (WIP)
+- ELF parser (WIP)
+
+It is still in it's early development phase, or more commonly known as alpha stage.
+
+Functions that could be considered "stable" (need more testing on 32 bits architecture due to uint64_t):
+- PeCheck()
+- PeLoad()
+- PeGetDosHeader()
+- PeGetNtHeader()
+- PeGetSectionHeaderTable()
+- PeUnload()
+- RvaToVa()
+- RvaToOffset()
+- OffsetToRva()
+
+I'm releasing the source so more people can contribute to it and use it.
+
+Hope you enjoy it,
+
+Don't hesitate to mail me if you have any comment on it.
+
+m_101
