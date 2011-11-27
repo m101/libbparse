@@ -23,9 +23,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-unsigned char* escape_hex (unsigned char *bytes, size_t nbytes);
+unsigned char* escape_hex (unsigned char *bytes, int nbytes);
 // unescape escaped hex
-unsigned char* unescape_hex (char *str, size_t szStr);
-unsigned int str2num (unsigned char *str, size_t len);
+unsigned char* unescape_hex (char *str, int szStr);
+unsigned int hexstr2num (unsigned char *str, int len);
 
-#endif
+#endif  /* _ESCAPE_H_ */
